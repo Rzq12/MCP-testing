@@ -43,17 +43,28 @@ Hapus volume lalu jalankan ulang:
 
 ## Tool MCP
 
-- `get_kinerja(tahun)`: mengambil target dan realisasi per unit dan indikator.
-- `list_unit()`: mengambil daftar unit yang tersedia.
-- `get_program(tahun)`: mengambil nama program, unit, status, dan anggaran per tahun.
-- `list_program()`: mengambil daftar nama program yang tersedia.
-- `get_ringkasan_program(tahun)`: menggabungkan tabel `program`, `kegiatan`, dan `kinerja` berdasarkan tahun dan unit.
-- `list_pegawai()`: mengambil seluruh pegawai dari database `sdm` tanpa NIP.
-- `get_pegawai(unit)`: mengambil pegawai berdasarkan unit dari database `sdm` tanpa NIP.
+- `warehouse_query(question)`: gateway utama untuk pertanyaan program, pegawai, kinerja, unit, dan ringkasan.
 - `classify_emotion(text)`: mengklasifikasikan emosi melalui API Hugging Face.
 - `get_review_insight(query)`: meminta insight review dari API Hugging Face.
 - `chat_review(question)`: bertanya tentang review melalui API Hugging Face.
 - `run_review_agent(review_text)`: menjalankan agent review melalui API Hugging Face.
+- `codegraph_status(refresh)`: melihat status atau memaksa pembaruan indeks CodeGraph.
+
+## CodeGraph
+
+MCP `warehouse` juga membangun indeks CodeGraph lokal pada `.codegraph.sqlite`.
+Indeks ini membaca `server.py`, `init.sql`, `README.md`, dan `opencode.json` untuk
+memetakan tool MCP, fungsi Python, tabel, database, dan endpoint Hugging Face.
+Indeks hanya dibangun ulang ketika isi file berubah. CodeGraph dipakai secara
+internal oleh `warehouse_query` untuk memilih handler dan database yang relevan,
+sehingga agent tidak perlu melihat seluruh tool data satu per satu. Gunakan
+`codegraph_status(refresh=true)` untuk memaksa pembaruan.
+
+Contoh pertanyaan:
+
+- `Tampilkan program tahun 2025 beserta status dan anggarannya.`
+- `Tampilkan pegawai yang bekerja di Biro SDM.`
+- `Bagaimana capaian kinerja tahun 2025?`
 
 Konfigurasi database dan URL API wajib diisi melalui `.env`. Tidak ada
 kredensial atau URL API default di dalam kode.
