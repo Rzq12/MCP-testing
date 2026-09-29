@@ -56,8 +56,7 @@ Hapus volume lalu jalankan ulang:
 - `run_review_agent(review_text)`: menjalankan agent review melalui API Hugging Face.
 
 Konfigurasi database dan API wajib diisi melalui `.env`. Tidak ada kredensial
-atau URL API default di dalam kode. `HF_API_TOKEN` bersifat opsional jika Space
-Anda bersifat publik.
+atau URL API default di dalam kode.
 
 ## Hubungan data
 
