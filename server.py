@@ -11,7 +11,11 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).with_name(".env"))
 
 
-mcp = FastMCP("warehouse")
+mcp = FastMCP(
+    "warehouse",
+    host="0.0.0.0",
+    port=8000,
+)
 
 
 client = clickhouse_connect.get_client(
