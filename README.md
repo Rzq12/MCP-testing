@@ -55,8 +55,8 @@ Hapus volume lalu jalankan ulang:
 - `chat_review(question)`: bertanya tentang review melalui API Hugging Face.
 - `run_review_agent(review_text)`: menjalankan agent review melalui API Hugging Face.
 
-Konfigurasi database dan API wajib diisi melalui `.env`. Tidak ada kredensial
-atau URL API default di dalam kode.
+Konfigurasi database dan URL API wajib diisi melalui `.env`. Tidak ada
+kredensial atau URL API default di dalam kode.
 
 ## Hubungan data
 

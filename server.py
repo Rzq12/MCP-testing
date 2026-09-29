@@ -25,21 +25,19 @@ mcp = FastMCP(
 )
 
 
-client = clickhouse_connect.get_client(
-    host=required_env("DB_HOST"),
-    port=int(required_env("DB_PORT")),
-    username=required_env("DB_USERNAME"),
-    password=required_env("DB_PASSWORD"),
-    database=required_env("DB_NAME"),
-)
+_clients: dict[str, object] = {}
 
-sdm_client = clickhouse_connect.get_client(
-    host=required_env("DB_HOST"),
-    port=int(required_env("DB_PORT")),
-    username=required_env("DB_USERNAME"),
-    password=required_env("DB_PASSWORD"),
-    database=required_env("SDM_DB_NAME"),
-)
+
+def get_client(database_env: str) -> object:
+    if database_env not in _clients:
+        _clients[database_env] = clickhouse_connect.get_client(
+            host=required_env("DB_HOST"),
+            port=int(required_env("DB_PORT")),
+            username=required_env("DB_USERNAME"),
+            password=required_env("DB_PASSWORD"),
+            database=required_env(database_env),
+        )
+    return _clients[database_env]
 
 HF_API_BASE_URL = required_env("HF_API_BASE_URL").rstrip("/")
 
@@ -49,10 +47,7 @@ def _call_hf_api(path: str, payload: dict) -> dict:
     request = Request(
         f"{HF_API_BASE_URL}{path}",
         data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            **({"Authorization": f"Bearer {HF_API_TOKEN}"} if HF_API_TOKEN else {}),
-        },
+        headers={"Content-Type": "application/json"},
         method="POST",
     )
     try:
@@ -99,7 +94,7 @@ def run_review_agent(review_text: str) -> dict:
 
 @mcp.tool()
 def get_kinerja(tahun: int) -> list[dict]:
-    result = client.query(
+    result = get_client("DB_NAME").query(
         """
         SELECT tahun, unit, indikator, target, realisasi
         FROM kinerja
@@ -113,7 +108,7 @@ def get_kinerja(tahun: int) -> list[dict]:
 
 @mcp.tool()
 def list_unit() -> list[str]:
-    result = client.query(
+    result = get_client("DB_NAME").query(
         """
         SELECT DISTINCT unit
         FROM kinerja
@@ -124,7 +119,7 @@ def list_unit() -> list[str]:
 
 @mcp.tool()
 def get_program(tahun: int) -> list[dict]:
-    result = client.query(
+    result = get_client("DB_NAME").query(
         """
         SELECT tahun, unit, nama_program, status, anggaran
         FROM program
@@ -137,7 +132,7 @@ def get_program(tahun: int) -> list[dict]:
 
 @mcp.tool()
 def list_program() -> list[str]:
-    result = client.query(
+    result = get_client("DB_NAME").query(
         """
         SELECT DISTINCT nama_program
         FROM program
@@ -148,7 +143,7 @@ def list_program() -> list[str]:
 
 @mcp.tool()
 def get_ringkasan_program(tahun: int) -> list[dict]:
-    result = client.query(
+    result = get_client("DB_NAME").query(
         """
         SELECT
             p.tahun,
@@ -181,7 +176,7 @@ def get_ringkasan_program(tahun: int) -> list[dict]:
 
 @mcp.tool()
 def list_pegawai() -> list[dict]:
-    result = sdm_client.query(
+    result = get_client("SDM_DB_NAME").query(
         """
         SELECT nama, unit, jabatan, status_kepegawaian, tahun_masuk
         FROM pegawai
@@ -192,7 +187,7 @@ def list_pegawai() -> list[dict]:
 
 @mcp.tool()
 def get_pegawai(unit: str) -> list[dict]:
-    result = sdm_client.query(
+    result = get_client("SDM_DB_NAME").query(
         """
         SELECT nama, unit, jabatan, status_kepegawaian, tahun_masuk
         FROM pegawai
