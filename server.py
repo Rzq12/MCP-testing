@@ -2,27 +2,32 @@ from mcp.server.fastmcp import FastMCP
 import clickhouse_connect
 import json
 import os
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).with_name(".env"))
 
 
 mcp = FastMCP("warehouse")
 
 
 client = clickhouse_connect.get_client(
-    host="localhost",
-    port=8123,
-    username="admin",
-    password="admin",
-    database="seirama",
+    host=os.getenv("DB_HOST", "localhost"),
+    port=int(os.getenv("DB_PORT", "8123")),
+    username=os.getenv("DB_USERNAME", "admin"),
+    password=os.getenv("DB_PASSWORD", "admin"),
+    database=os.getenv("DB_NAME", "seirama"),
 )
 
 sdm_client = clickhouse_connect.get_client(
-    host="localhost",
-    port=8123,
-    username="admin",
-    password="admin",
-    database="sdm",
+    host=os.getenv("DB_HOST", "localhost"),
+    port=int(os.getenv("DB_PORT", "8123")),
+    username=os.getenv("DB_USERNAME", "admin"),
+    password=os.getenv("DB_PASSWORD", "admin"),
+    database=os.getenv("SDM_DB_NAME", "sdm"),
 )
 
 HF_API_BASE_URL = os.getenv(

@@ -23,9 +23,11 @@ ClickHouse sekarang memiliki dua database yang diakses oleh MCP `warehouse`:
 3. Tunggu sampai ClickHouse siap. Skrip `init.sql` membuat database, tabel, dan data contoh saat volume dibuat pertama kali.
 4. Instal dependensi Python:
 
-   `pip install mcp clickhouse-connect`
+   `pip install mcp clickhouse-connect python-dotenv`
 
-5. Jalankan OpenCode dari folder ini:
+5. Salin `.env.example` menjadi `.env`, lalu isi kredensial database.
+
+6. Jalankan OpenCode dari folder ini:
 
    `opencode`
 
