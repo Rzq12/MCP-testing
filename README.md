@@ -55,9 +55,9 @@ Hapus volume lalu jalankan ulang:
 - `chat_review(question)`: bertanya tentang review melalui API Hugging Face.
 - `run_review_agent(review_text)`: menjalankan agent review melalui API Hugging Face.
 
-Tool API Hugging Face menggunakan URL default:
-`https://riezqidr-indo-emotion-classifier.hf.space`.
-URL dapat diganti dengan environment variable `HF_API_BASE_URL`.
+Konfigurasi database dan API wajib diisi melalui `.env`. Tidak ada kredensial
+atau URL API default di dalam kode. `HF_API_TOKEN` bersifat opsional jika Space
+Anda bersifat publik.
 
 ## Hubungan data
 

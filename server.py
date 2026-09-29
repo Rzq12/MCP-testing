@@ -11,6 +11,13 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).with_name(".env"))
 
 
+def required_env(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise RuntimeError(f"Environment variable {name} belum dikonfigurasi")
+    return value
+
+
 mcp = FastMCP(
     "warehouse",
     host="0.0.0.0",
@@ -19,32 +26,33 @@ mcp = FastMCP(
 
 
 client = clickhouse_connect.get_client(
-    host=os.getenv("DB_HOST", "localhost"),
-    port=int(os.getenv("DB_PORT", "8123")),
-    username=os.getenv("DB_USERNAME", "admin"),
-    password=os.getenv("DB_PASSWORD", "admin"),
-    database=os.getenv("DB_NAME", "seirama"),
+    host=required_env("DB_HOST"),
+    port=int(required_env("DB_PORT")),
+    username=required_env("DB_USERNAME"),
+    password=required_env("DB_PASSWORD"),
+    database=required_env("DB_NAME"),
 )
 
 sdm_client = clickhouse_connect.get_client(
-    host=os.getenv("DB_HOST", "localhost"),
-    port=int(os.getenv("DB_PORT", "8123")),
-    username=os.getenv("DB_USERNAME", "admin"),
-    password=os.getenv("DB_PASSWORD", "admin"),
-    database=os.getenv("SDM_DB_NAME", "sdm"),
+    host=required_env("DB_HOST"),
+    port=int(required_env("DB_PORT")),
+    username=required_env("DB_USERNAME"),
+    password=required_env("DB_PASSWORD"),
+    database=required_env("SDM_DB_NAME"),
 )
 
-HF_API_BASE_URL = os.getenv(
-    "HF_API_BASE_URL",
-    "https://riezqidr-indo-emotion-classifier.hf.space",
-).rstrip("/")
+HF_API_BASE_URL = required_env("HF_API_BASE_URL").rstrip("/")
+
 
 
 def _call_hf_api(path: str, payload: dict) -> dict:
     request = Request(
         f"{HF_API_BASE_URL}{path}",
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            **({"Authorization": f"Bearer {HF_API_TOKEN}"} if HF_API_TOKEN else {}),
+        },
         method="POST",
     )
     try:
