@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "warehouse": {
+      "type": "local",
+      "command": ["D:/Anaconda/envs/cv-screener/python.exe", "server.py"]
+    }
+  },
+  "tools": {
+    "bash": false,
+    "edit": false,
+    "write": false
+  }
+}
