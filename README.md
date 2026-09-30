@@ -23,7 +23,7 @@ ClickHouse sekarang memiliki dua database yang diakses oleh MCP `warehouse`:
 3. Tunggu sampai ClickHouse siap. Skrip `init.sql` membuat database, tabel, dan data contoh saat volume dibuat pertama kali.
 4. Instal dependensi Python:
 
-   `pip install mcp clickhouse-connect python-dotenv`
+   `pip install mcp clickhouse-connect python-dotenv pypdf qdrant-client[fastembed]`
 
 5. Salin `.env.example` menjadi `.env`, lalu isi kredensial database.
 
@@ -49,16 +49,30 @@ Hapus volume lalu jalankan ulang:
 - `chat_review(question)`: bertanya tentang review melalui API Hugging Face.
 - `run_review_agent(review_text)`: menjalankan agent review melalui API Hugging Face.
 - `codegraph_status(refresh)`: melihat status atau memaksa pembaruan indeks CodeGraph.
+- `document_search(query, category, limit)`: mencari isi PDF di folder `Docs` dengan SQLite FTS5.
+- `document_get(path, page_number)`: mengambil metadata atau isi halaman PDF tertentu.
 
 ## CodeGraph
 
 MCP `warehouse` juga membangun indeks CodeGraph lokal pada `.codegraph.sqlite`.
-Indeks ini membaca `server.py`, `init.sql`, `README.md`, dan `opencode.json` untuk
-memetakan tool MCP, fungsi Python, tabel, database, dan endpoint Hugging Face.
+Indeks ini membaca `server.py`, `init.sql`, `README.md`, `opencode.json`, dan seluruh
+PDF dalam folder `Docs` untuk memetakan tool MCP, fungsi Python, tabel, database,
+endpoint Hugging Face, dokumen, kategori, halaman, serta isi dokumen.
 Indeks hanya dibangun ulang ketika isi file berubah. CodeGraph dipakai secara
 internal oleh `warehouse_query` untuk memilih handler dan database yang relevan,
 sehingga agent tidak perlu melihat seluruh tool data satu per satu. Gunakan
 `codegraph_status(refresh=true)` untuk memaksa pembaruan.
+
+Isi PDF diekstrak per halaman dan chunk-nya disimpan sebagai vector embedding di
+Qdrant. Metadata, teks halaman, dan relasi CodeGraph tetap disimpan di SQLite.
+PDF yang hanya berupa scan/gambar membutuhkan OCR
+terlebih dahulu karena `pypdf` hanya dapat mengekstrak text layer.
+
+Contoh pertanyaan dokumen:
+
+- `Cari isi dokumen yang membahas penyetaraan alumni.`
+- `Apa isi peraturan yang menyebut Reform Leader Academy?`
+- `Tampilkan halaman yang membahas evaluasi peraturan.`
 
 Contoh pertanyaan:
 

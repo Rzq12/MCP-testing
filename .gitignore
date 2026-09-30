@@ -40,10 +40,15 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
+.codegraph.sqlite
+*.sqlite-shm
+*.sqlite-wal
 clickhouse_data/
+qdrant_data/
 data/
 
 # Logs and temporary files
 *.log
 *.tmp
 *.temp
+/Docs
