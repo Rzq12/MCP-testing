@@ -51,6 +51,7 @@ Hapus volume lalu jalankan ulang:
 - `codegraph_status(refresh)`: melihat status atau memaksa pembaruan indeks CodeGraph.
 - `document_search(query, category, limit)`: mencari isi PDF di folder `Docs` dengan SQLite FTS5.
 - `document_get(path, page_number)`: mengambil metadata atau isi halaman PDF tertentu.
+- Data alumni tersedia melalui view `seirama.v_alumnidiklat_angkatan` dan `seirama.v_alumnidiklat_ringkas`.
 
 ## CodeGraph
 

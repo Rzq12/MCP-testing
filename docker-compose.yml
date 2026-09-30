@@ -10,6 +10,7 @@ services:
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
     volumes:
       - clickhouse_data:/var/lib/clickhouse
+      - ./data sample:/var/lib/clickhouse/user_files/data_sample:ro
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   qdrant:
