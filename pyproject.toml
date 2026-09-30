@@ -12,6 +12,7 @@ dependencies = [
   "clickhouse-connect",
   "python-dotenv",
   "pypdf",
+  "docling",
   "qdrant-client[fastembed]",
 ]
 
