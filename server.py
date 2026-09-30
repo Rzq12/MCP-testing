@@ -205,17 +205,34 @@ def document_get(path: str, page_number: int | None = None) -> dict:
 
 @mcp.tool()
 def warehouse_query(question: str) -> dict:
-    """Menjawab pertanyaan warehouse atau dokumen melalui routing internal."""
+    """Menjalankan satu atau beberapa sumber untuk pertanyaan pengguna."""
     if not question.strip():
         raise ValueError("question tidak boleh kosong")
     _build()
-    handler_name, parameters, source = route(question)
-    if handler_name == "document_search":
-        rows = document_search(**parameters)["results"]
-    else:
-        handlers = {"get_alumni_angkatan": get_alumni_angkatan, "get_alumni_ringkas": get_alumni_ringkas}
-        rows = handlers[handler_name](**parameters)
-    return {"route": {"handler": handler_name, "source": source, "parameters": parameters}, "count": len(rows), "data": rows}
+    routed = route(question)
+    routes = [routed] if isinstance(routed, tuple) else routed
+    handlers = {"get_alumni_angkatan": get_alumni_angkatan, "get_alumni_ringkas": get_alumni_ringkas}
+    results = []
+
+    for handler_name, parameters, source in routes:
+        if handler_name == "document_search":
+            data = document_search(**parameters)["results"]
+        else:
+            data = handlers[handler_name](**parameters)
+        results.append({
+            "handler": handler_name,
+            "source": source,
+            "parameters": parameters,
+            "count": len(data),
+            "data": data,
+        })
+
+    return {
+        "route": results,
+        "count": sum(result["count"] for result in results),
+        "sources": [result["source"] for result in results],
+        "data": results,
+    }
 
 
 if __name__ == "__main__":
