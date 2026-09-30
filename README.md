@@ -4,7 +4,7 @@ Prototipe lokal untuk menjawab pertanyaan data internal dari ClickHouse melalui 
 
 ClickHouse sekarang memiliki dua database yang diakses oleh MCP `warehouse`:
 
-- `seirama`: kinerja, program, dan kegiatan.
+- `seirama`: data alumni diklat.
 - `sdm`: data pegawai.
 
 ## Prasyarat
@@ -43,7 +43,7 @@ Hapus volume lalu jalankan ulang:
 
 ## Tool MCP
 
-- `warehouse_query(question)`: gateway utama untuk pertanyaan program, pegawai, kinerja, unit, dan ringkasan.
+- `warehouse_query(question)`: gateway utama untuk pertanyaan alumni dan pencarian dokumen.
 - `get_bkn_asn(page, size)`: mengambil statistik ASN dari API publik BKN.
 - `get_bkn_asn_by_id(id)`, `get_bkn_asn_by_idbkn(idbkn)`, `get_bkn_asn_total(idbkn)`, `get_bkn_asn_count()`: detail dan agregasi ASN.
 - `get_bkn_demografi(page, size)`: mengambil statistik demografi dari API publik BKN.
@@ -56,7 +56,7 @@ Hapus volume lalu jalankan ulang:
 - `codegraph_status(refresh)`: melihat status atau memaksa pembaruan indeks CodeGraph.
 - `document_search(query, category, limit)`: mencari isi PDF di folder `Docs` dengan SQLite FTS5.
 - `document_get(path, page_number)`: mengambil metadata atau isi halaman PDF tertentu.
-- Data alumni tersedia melalui view `seirama.v_alumnidiklat_angkatan` dan `seirama.v_alumnidiklat_ringkas`.
+- Data alumni tersedia melalui tabel `seirama.alumnidiklat_angkatan` dan `seirama.alumnidiklat_ringkas`.
 
 ## CodeGraph
 
@@ -80,27 +80,10 @@ Contoh pertanyaan dokumen:
 - `Apa isi peraturan yang menyebut Reform Leader Academy?`
 - `Tampilkan halaman yang membahas evaluasi peraturan.`
 
-Contoh pertanyaan:
-
-- `Tampilkan program tahun 2025 beserta status dan anggarannya.`
-- `Tampilkan pegawai yang bekerja di Biro SDM.`
-- `Bagaimana capaian kinerja tahun 2025?`
-
 Konfigurasi database dan URL API wajib diisi melalui `.env`. Tidak ada
 kredensial atau URL API default di dalam kode.
 
-## Hubungan data
+Contoh pertanyaan alumni di OpenCode:
 
-- `program` menyimpan program dan anggarannya.
-- `kegiatan` menyimpan kegiatan di dalam program dan realisasi anggarannya.
-- `kinerja` menyimpan indikator capaian unit.
-- `get_ringkasan_program(tahun)` melakukan query `JOIN` ke ketiga tabel tersebut.
-- `sdm.pegawai` menyimpan data pegawai dan diakses melalui koneksi database kedua.
-
-Contoh pertanyaan di OpenCode:
-
-- `Tampilkan program tahun 2025 beserta status dan anggarannya.`
-- `Program apa saja yang tersedia?`
-- `Bagaimana capaian kinerja tahun 2025?`
-- `Hubungkan program, kegiatan, anggaran, dan capaian kinerja tahun 2025.`
-- `Tampilkan pegawai yang bekerja di Biro SDM.`
+- `Tampilkan jumlah alumni berdasarkan lembaga diklat tahun 2025.`
+- `Tampilkan alumni berdasarkan jenis kelamin dan instansi asal tahun 2025.`

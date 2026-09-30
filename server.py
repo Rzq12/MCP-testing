@@ -11,7 +11,7 @@ from mcp.server.fastmcp import FastMCP
 
 from seirama_mcp import codegraph, documents
 from seirama_mcp.config import settings
-from seirama_mcp.integrations.warehouse import get_alumni_angkatan, get_alumni_ringkas, get_pegawai, get_kinerja, get_program, get_ringkasan_program, list_pegawai, list_program, list_unit
+from seirama_mcp.integrations.warehouse import get_alumni_angkatan, get_alumni_ringkas
 from seirama_mcp.services.router import route
 
 BKN_API_BASE_URL = settings.bkn_api_base_url.rstrip("/")
@@ -213,7 +213,7 @@ def warehouse_query(question: str) -> dict:
     if handler_name == "document_search":
         rows = document_search(**parameters)["results"]
     else:
-        handlers = {"get_kinerja": get_kinerja, "list_unit": list_unit, "get_program": get_program, "list_program": list_program, "get_ringkasan_program": get_ringkasan_program, "get_alumni_angkatan": get_alumni_angkatan, "get_alumni_ringkas": get_alumni_ringkas, "list_pegawai": list_pegawai, "get_pegawai": get_pegawai}
+        handlers = {"get_alumni_angkatan": get_alumni_angkatan, "get_alumni_ringkas": get_alumni_ringkas}
         rows = handlers[handler_name](**parameters)
     return {"route": {"handler": handler_name, "source": source, "parameters": parameters}, "count": len(rows), "data": rows}
 
