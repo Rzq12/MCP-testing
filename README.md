@@ -44,10 +44,15 @@ Hapus volume lalu jalankan ulang:
 ## Tool MCP
 
 - `warehouse_query(question)`: gateway utama untuk pertanyaan program, pegawai, kinerja, unit, dan ringkasan.
-- `classify_emotion(text)`: mengklasifikasikan emosi melalui API Hugging Face.
-- `get_review_insight(query)`: meminta insight review dari API Hugging Face.
-- `chat_review(question)`: bertanya tentang review melalui API Hugging Face.
-- `run_review_agent(review_text)`: menjalankan agent review melalui API Hugging Face.
+- `get_bkn_asn(page, size)`: mengambil statistik ASN dari API publik BKN.
+- `get_bkn_asn_by_id(id)`, `get_bkn_asn_by_idbkn(idbkn)`, `get_bkn_asn_total(idbkn)`, `get_bkn_asn_count()`: detail dan agregasi ASN.
+- `get_bkn_demografi(page, size)`: mengambil statistik demografi dari API publik BKN.
+- `get_bkn_demografi_by_id(id)`, `get_bkn_demografi_by_idbkn(idbkn)`, `get_bkn_demografi_count()`: detail dan agregasi demografi.
+- `get_bkn_inovasi(page, size)`: mengambil statistik inovasi dari API publik BKN.
+- `get_bkn_inovasi_by_id(id)`, `get_bkn_inovasi_by_idbkn(idbkn)`, `get_bkn_inovasi_count()`: detail dan agregasi inovasi.
+- `get_bkn_master_instansi(page, size)`: mengambil master instansi dari API publik BKN.
+- `get_bkn_instansi_by_id(id)`, `search_bkn_instansi(nama, page, size)`: detail dan pencarian instansi.
+- `get_bkn_instansi_by_provinsi(kd_prov, page, size)`, `get_bkn_instansi_by_kode(cepat_kode)`, `get_bkn_instansi_by_jenis(jenis, page, size)`, `get_bkn_instansi_count()`: filter dan jumlah instansi.
 - `codegraph_status(refresh)`: melihat status atau memaksa pembaruan indeks CodeGraph.
 - `document_search(query, category, limit)`: mencari isi PDF di folder `Docs` dengan SQLite FTS5.
 - `document_get(path, page_number)`: mengambil metadata atau isi halaman PDF tertentu.
@@ -58,7 +63,7 @@ Hapus volume lalu jalankan ulang:
 MCP `warehouse` juga membangun indeks CodeGraph lokal pada `.codegraph.sqlite`.
 Indeks ini membaca `server.py`, `init.sql`, `README.md`, `opencode.json`, dan seluruh
 PDF dalam folder `Docs` untuk memetakan tool MCP, fungsi Python, tabel, database,
-endpoint Hugging Face, dokumen, kategori, halaman, serta isi dokumen.
+endpoint publik BKN, dokumen, kategori, halaman, serta isi dokumen.
 Indeks hanya dibangun ulang ketika isi file berubah. CodeGraph dipakai secara
 internal oleh `warehouse_query` untuk memilih handler dan database yang relevan,
 sehingga agent tidak perlu melihat seluruh tool data satu per satu. Gunakan

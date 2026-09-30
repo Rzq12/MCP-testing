@@ -14,19 +14,28 @@ from seirama_mcp.config import settings
 from seirama_mcp.integrations.warehouse import get_alumni_angkatan, get_alumni_ringkas, get_pegawai, get_kinerja, get_program, get_ringkasan_program, list_pegawai, list_program, list_unit
 from seirama_mcp.services.router import route
 
-HF_API_BASE_URL = (settings.hf_api_base_url or settings.required_env("HF_API_BASE_URL")).rstrip("/")
+BKN_API_BASE_URL = settings.bkn_api_base_url.rstrip("/")
 mcp = FastMCP("warehouse", host="0.0.0.0", port=8000)
 
 
-def _call_hf_api(path: str, payload: dict) -> dict:
-    request = Request(f"{HF_API_BASE_URL}{path}", data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"}, method="POST")
+def _call_bkn_api(path: str, params: dict | None = None) -> dict:
+    from urllib.parse import urlencode
+    url = f"{BKN_API_BASE_URL}{path}"
+    if params:
+        url = f"{url}?{urlencode(params)}"
+    request = Request(url, headers={"Accept": "application/json"}, method="GET")
     try:
         with urlopen(request, timeout=60) as response:
             return json.loads(response.read().decode())
     except HTTPError as error:
-        raise RuntimeError(f"Hugging Face API error {error.code}: {error.read().decode(errors='replace')}") from error
+        raise RuntimeError(f"BKN API error {error.code}: {error.read().decode(errors='replace')}") from error
     except URLError as error:
-        raise RuntimeError(f"Tidak dapat terhubung ke Hugging Face API: {error.reason}") from error
+        raise RuntimeError(f"Tidak dapat terhubung ke BKN API: {error.reason}") from error
+
+def _pagination(page: int, size: int) -> dict:
+    if page < 0 or size < 1:
+        raise ValueError("page harus >= 0 dan size harus >= 1")
+    return {"page": page, "size": size}
 
 
 def _build(force: bool = False) -> dict:
@@ -37,35 +46,109 @@ _build()
 
 
 @mcp.tool()
-def classify_emotion(text: str) -> dict:
-    """Mengklasifikasikan emosi teks melalui API Hugging Face."""
-    if not text.strip():
-        raise ValueError("text tidak boleh kosong")
-    return _call_hf_api("/classify", {"text": text})
+def get_bkn_asn(page: int = 0, size: int = 20) -> dict:
+    """Mengambil statistik ASN dari API publik BKN."""
+    return _call_bkn_api("/api/public/asn", _pagination(page, size))
+
+@mcp.tool()
+def get_bkn_asn_by_id(id: int) -> dict:
+    """Mengambil statistik ASN berdasarkan ID."""
+    return _call_bkn_api(f"/api/public/asn/{id}")
+
+@mcp.tool()
+def get_bkn_asn_total(idbkn: str) -> dict:
+    """Mengambil total ASN berdasarkan ID BKN instansi."""
+    return _call_bkn_api(f"/api/public/asn/total/{idbkn}")
+
+@mcp.tool()
+def get_bkn_asn_by_idbkn(idbkn: str) -> dict:
+    """Mengambil statistik ASN berdasarkan ID BKN instansi."""
+    return _call_bkn_api(f"/api/public/asn/idbkn/{idbkn}")
+
+@mcp.tool()
+def get_bkn_asn_count() -> dict:
+    """Mengambil jumlah record statistik ASN."""
+    return _call_bkn_api("/api/public/asn/count")
 
 
 @mcp.tool()
-def get_review_insight(query: str) -> dict:
-    """Menghasilkan insight review melalui API Hugging Face."""
-    if not query.strip():
-        raise ValueError("query tidak boleh kosong")
-    return _call_hf_api("/insight", {"query": query})
+def get_bkn_demografi(page: int = 0, size: int = 20) -> dict:
+    """Mengambil statistik demografi dari API publik BKN."""
+    return _call_bkn_api("/api/public/demografi", _pagination(page, size))
+
+@mcp.tool()
+def get_bkn_demografi_by_id(id: int) -> dict:
+    """Mengambil statistik demografi berdasarkan ID."""
+    return _call_bkn_api(f"/api/public/demografi/{id}")
+
+@mcp.tool()
+def get_bkn_demografi_by_idbkn(idbkn: str) -> dict:
+    """Mengambil statistik demografi berdasarkan ID BKN instansi."""
+    return _call_bkn_api(f"/api/public/demografi/idbkn/{idbkn}")
+
+@mcp.tool()
+def get_bkn_demografi_count() -> dict:
+    """Mengambil jumlah record statistik demografi."""
+    return _call_bkn_api("/api/public/demografi/count")
 
 
 @mcp.tool()
-def chat_review(question: str) -> dict:
-    """Mengajukan pertanyaan tentang review ke API Hugging Face."""
-    if not question.strip():
-        raise ValueError("question tidak boleh kosong")
-    return _call_hf_api("/chat", {"question": question})
+def get_bkn_inovasi(page: int = 0, size: int = 20) -> dict:
+    """Mengambil statistik inovasi dari API publik BKN."""
+    return _call_bkn_api("/api/public/inovasi", _pagination(page, size))
+
+@mcp.tool()
+def get_bkn_inovasi_by_id(id: int) -> dict:
+    """Mengambil statistik inovasi berdasarkan ID."""
+    return _call_bkn_api(f"/api/public/inovasi/{id}")
+
+@mcp.tool()
+def get_bkn_inovasi_by_idbkn(idbkn: str) -> dict:
+    """Mengambil statistik inovasi berdasarkan ID BKN instansi."""
+    return _call_bkn_api(f"/api/public/inovasi/idbkn/{idbkn}")
+
+@mcp.tool()
+def get_bkn_inovasi_count() -> dict:
+    """Mengambil jumlah record statistik inovasi."""
+    return _call_bkn_api("/api/public/inovasi/count")
 
 
 @mcp.tool()
-def run_review_agent(review_text: str) -> dict:
-    """Menjalankan agent review dan routing emosi melalui API Hugging Face."""
-    if not review_text.strip():
-        raise ValueError("review_text tidak boleh kosong")
-    return _call_hf_api("/agent/run", {"review_text": review_text})
+def get_bkn_master_instansi(page: int = 0, size: int = 20) -> dict:
+    """Mengambil master instansi dari API publik BKN."""
+    return _call_bkn_api("/api/public/master-instansi", _pagination(page, size))
+
+@mcp.tool()
+def get_bkn_instansi_by_id(id: str) -> dict:
+    """Mengambil instansi berdasarkan ID."""
+    return _call_bkn_api(f"/api/public/master-instansi/{id}")
+
+@mcp.tool()
+def search_bkn_instansi(nama: str, page: int = 0, size: int = 20) -> dict:
+    """Mencari instansi berdasarkan nama."""
+    if not nama.strip():
+        raise ValueError("nama tidak boleh kosong")
+    return _call_bkn_api("/api/public/master-instansi/search", {"nama": nama, **_pagination(page, size)})
+
+@mcp.tool()
+def get_bkn_instansi_by_provinsi(kd_prov: str, page: int = 0, size: int = 20) -> dict:
+    """Mengambil instansi berdasarkan kode provinsi."""
+    return _call_bkn_api(f"/api/public/master-instansi/provinsi/{kd_prov}", _pagination(page, size))
+
+@mcp.tool()
+def get_bkn_instansi_by_kode(cepat_kode: str) -> dict:
+    """Mengambil instansi berdasarkan kode cepat."""
+    return _call_bkn_api(f"/api/public/master-instansi/kode/{cepat_kode}")
+
+@mcp.tool()
+def get_bkn_instansi_by_jenis(jenis: str, page: int = 0, size: int = 20) -> dict:
+    """Mengambil instansi berdasarkan jenis."""
+    return _call_bkn_api(f"/api/public/master-instansi/jenis/{jenis}", _pagination(page, size))
+
+@mcp.tool()
+def get_bkn_instansi_count() -> dict:
+    """Mengambil jumlah instansi."""
+    return _call_bkn_api("/api/public/master-instansi/count")
 
 
 def codegraph_search(query: str, limit: int = 20) -> list[dict]:
