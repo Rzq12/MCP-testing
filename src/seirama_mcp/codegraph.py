@@ -41,8 +41,9 @@ def build(force=False, document_indexer=None):
 	current = signature(); db = connection()
 	previous = db.execute("SELECT value FROM metadata WHERE key = 'signature'").fetchone()
 	if not force and previous and previous[0] == current:
+		documents = document_indexer(db) if document_indexer else {}
 		count = db.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]; db.close()
-		return {"updated": False, "node_count": count, "signature": current}
+		return {"updated": bool(documents.get("indexed")), "node_count": count, "signature": current, "documents": documents}
 	db.execute("DELETE FROM edges"); db.execute("DELETE FROM nodes")
 	source = (settings.project_root / "server.py").read_text(encoding="utf-8")
 	tree = ast.parse(source, filename="server.py"); functions = {}

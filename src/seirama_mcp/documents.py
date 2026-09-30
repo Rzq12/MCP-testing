@@ -5,7 +5,10 @@ from .config import settings
 from .codegraph import edge, node, connection
 
 def setup(db):
-	db.executescript("""CREATE TABLE IF NOT EXISTS documents (id INTEGER PRIMARY KEY, path TEXT UNIQUE NOT NULL, category TEXT NOT NULL, filename TEXT NOT NULL, checksum TEXT NOT NULL, page_count INTEGER NOT NULL DEFAULT 0); CREATE TABLE IF NOT EXISTS document_pages (id INTEGER PRIMARY KEY, document_id INTEGER NOT NULL, page_number INTEGER NOT NULL, text TEXT NOT NULL, UNIQUE(document_id, page_number)); CREATE TABLE IF NOT EXISTS document_chunks (id INTEGER PRIMARY KEY, document_id INTEGER NOT NULL, page_number INTEGER NOT NULL, chunk_index INTEGER NOT NULL, text TEXT NOT NULL, UNIQUE(document_id, page_number, chunk_index));""")
+	db.executescript("""CREATE TABLE IF NOT EXISTS documents (id INTEGER PRIMARY KEY, path TEXT UNIQUE NOT NULL, category TEXT NOT NULL, filename TEXT NOT NULL, checksum TEXT NOT NULL, page_count INTEGER NOT NULL DEFAULT 0, indexed INTEGER NOT NULL DEFAULT 0); CREATE TABLE IF NOT EXISTS document_pages (id INTEGER PRIMARY KEY, document_id INTEGER NOT NULL, page_number INTEGER NOT NULL, text TEXT NOT NULL, UNIQUE(document_id, page_number)); CREATE TABLE IF NOT EXISTS document_chunks (id INTEGER PRIMARY KEY, document_id INTEGER NOT NULL, page_number INTEGER NOT NULL, chunk_index INTEGER NOT NULL, text TEXT NOT NULL, UNIQUE(document_id, page_number, chunk_index));""")
+	columns = {row[1] for row in db.execute("PRAGMA table_info(documents)")}
+	if "indexed" not in columns:
+		db.execute("ALTER TABLE documents ADD COLUMN indexed INTEGER NOT NULL DEFAULT 0")
 
 def initialize(db): setup(db)
 def category(path):
@@ -62,12 +65,15 @@ def index(db):
 	setup(db)
 	if not settings.docs_root.exists(): return {"indexed": 0, "skipped": 0, "pdf_count": 0}
 	client, embedder=qdrant(); pdfs=sorted(settings.docs_root.rglob("*.pdf")); indexed=skipped=0
+	collection_points = client.count(collection_name=settings.qdrant_collection, exact=True).count
+	if collection_points == 0 and pdfs:
+		db.execute("UPDATE documents SET indexed=0")
 	from qdrant_client.models import FieldCondition, Filter, MatchValue, PointStruct
 	for path in pdfs:
-		relative=str(path.relative_to(settings.docs_root.parent)); checksum=hashlib.sha256(path.read_bytes()).hexdigest(); existing=db.execute("SELECT id, checksum FROM documents WHERE path=?", (relative,)).fetchone()
-		if existing and existing[1] == checksum: skipped += 1; continue
-		if existing: document_id=existing[0]; client.delete(collection_name=settings.qdrant_collection, points_selector=Filter(must=[FieldCondition(key="path", match=MatchValue(value=relative))])); db.execute("DELETE FROM document_pages WHERE document_id=?", (document_id,)); db.execute("DELETE FROM document_chunks WHERE document_id=?", (document_id,)); db.execute("UPDATE documents SET checksum=?, page_count=0 WHERE id=?", (checksum, document_id))
-		else: document_id=db.execute("INSERT INTO documents(path,category,filename,checksum) VALUES(?,?,?,?)", (relative, category(path), path.name, checksum)).lastrowid
+		relative=str(path.relative_to(settings.docs_root.parent)); checksum=hashlib.sha256(path.read_bytes()).hexdigest(); existing=db.execute("SELECT id, checksum, indexed FROM documents WHERE path=?", (relative,)).fetchone()
+		if existing and existing[1] == checksum and existing[2]: skipped += 1; continue
+		if existing: document_id=existing[0]; client.delete(collection_name=settings.qdrant_collection, points_selector=Filter(must=[FieldCondition(key="path", match=MatchValue(value=relative))])); db.execute("DELETE FROM document_pages WHERE document_id=?", (document_id,)); db.execute("DELETE FROM document_chunks WHERE document_id=?", (document_id,)); db.execute("UPDATE documents SET checksum=?, page_count=0, indexed=0 WHERE id=?", (checksum, document_id))
+		else: document_id=db.execute("INSERT INTO documents(path,category,filename,checksum,indexed) VALUES(?,?,?,?,0)", (relative, category(path), path.name, checksum)).lastrowid
 		pages = parse_pdf(path); pending=[]
 		for page_number, page_text in pages:
 			text=re.sub(r"(?<!\n)-\n(?=\w)", "", page_text or ""); text=re.sub(r"[ \t]+", " ", text).strip(); db.execute("INSERT INTO document_pages(document_id,page_number,text) VALUES(?,?,?)", (document_id,page_number,text))
@@ -75,8 +81,8 @@ def index(db):
 				chunk_id=db.execute("INSERT INTO document_chunks(document_id,page_number,chunk_index,text) VALUES(?,?,?,?)", (document_id,page_number,chunk_index,text_chunk)).lastrowid; pending.append((int(chunk_id), text_chunk, page_number))
 		if pending:
 			vectors=list(embedder.embed([item[1] for item in pending])); client.upsert(collection_name=settings.qdrant_collection, points=[PointStruct(id=chunk_id, vector=vector.tolist(), payload={"text": text_chunk, "path": relative, "category": category(path), "page_number": page_number, "chunk_id": chunk_id}) for (chunk_id, text_chunk, page_number), vector in zip(pending, vectors)])
-		db.execute("UPDATE documents SET page_count=? WHERE id=?", (len(pages), document_id)); edge(db,node(db,"document",path.name,relative),"HAS_CATEGORY",node(db,"document_category",category(path))); indexed += 1
-	db.commit(); return {"indexed": indexed, "skipped": skipped, "pdf_count": len(pdfs)}
+		db.execute("UPDATE documents SET page_count=?, indexed=1 WHERE id=?", (len(pages), document_id)); edge(db,node(db,"document",path.name,relative),"HAS_CATEGORY",node(db,"document_category",category(path))); db.commit(); indexed += 1
+	return {"indexed": indexed, "skipped": skipped, "pdf_count": len(pdfs)}
 def search(query, category_filter, limit):
 	client, embedder=qdrant(); vector=list(embedder.embed([query]))[0].tolist(); query_filter=None
 	if category_filter:
